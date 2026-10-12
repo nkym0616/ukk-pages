@@ -20,12 +20,10 @@ export default defineConfig({
     {
       name: "pages-only",
       transformIndexHtml(html) {
-        return html
-          .replace('    <script src="/api/platform/config.js"></script>', "")
-          .replace(
-            '<meta name="theme-color"',
-            '<meta name="referrer" content="no-referrer" />\n    <meta name="theme-color"'
-          );
+        return html.replace(
+          '<meta name="theme-color"',
+          '<meta name="referrer" content="no-referrer" />\n    <meta name="theme-color"',
+        );
       },
     },
   ],
