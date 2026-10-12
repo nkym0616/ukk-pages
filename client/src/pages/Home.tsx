@@ -142,9 +142,7 @@ function Gate({
           <span>ひとつの場所に。</span>
         </h1>
         <p>
-          コンテストごとのタスク、担当、締切。
-          <br />
-          みんなの一歩をつなぐ、UKKのワークスペース。
+        
         </p>
         <div className="gate-actions">
           {!profile ? (
