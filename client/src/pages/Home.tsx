@@ -167,7 +167,7 @@ function Gate({
                 <ArrowRight size={18} />
               </a>
               <small>
-                Manusアカウント不要 · 初回ログイン後は部長の承認が必要です
+                 初回ログイン後は部長の承認が必要です
               </small>
               {providers.data?.google === false && (
                 <div className="login-config-notice">
