@@ -116,7 +116,7 @@ function Gate({
   const [code, setCode] = useState("");
   const claim = trpc.ukk.claimOwner.useMutation({
     onSuccess: () => {
-      toast.success("部長の初期設定が完了しました");
+      toast.success("アドミンの初期設定が完了しました");
       onRefresh();
     },
     onError: (e) => toast.error(e.message),
@@ -147,7 +147,7 @@ function Gate({
                 Googleでログイン
                 <ArrowRight size={18} />
               </button>
-              <small>初回ログイン後は部長の承認が必要です</small>
+              <small>初回ログイン後はアドミンの承認が必要です</small>
             </>
           ) : (
             <div className="gate-notice">
@@ -202,7 +202,7 @@ function Gate({
                         className="btn primary"
                         disabled={claim.isPending}
                       >
-                        部長として登録
+                        アドミンとして登録
                       </button>
                       <small>
                         このコードは一度だけ使用できます。部員には共有しないでください。
@@ -1206,7 +1206,7 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
                 <div className="permission-table">
                   <div className="permission-row heading">
                     <span>操作できること</span>
-                    <strong>部長</strong>
+                    <strong>アドミン</strong>
                     <strong>コンテストリーダー</strong>
                     <strong>メンバー</strong>
                   </div>
@@ -1260,7 +1260,7 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
           {(page === "members" || page === "access") && !admin && (
             <Empty
               title="アクセス権限がありません"
-              text="管理メニューは部長のみ利用できます。"
+              text="管理メニューはアドミンのみ利用できます。"
             />
           )}
           <footer className="app-footer">
