@@ -62,7 +62,7 @@ export type Overview = {
 };
 
 export const roleLabels: Record<ClubRole, string> = {
-  admin: "部長",
+  admin: "アドミン",
   manager: "コンテストリーダー",
   member: "部員",
 };
