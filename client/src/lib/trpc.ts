@@ -117,6 +117,9 @@ async function overviewQuery(): Promise<Overview> {
 
 async function currentUser() {
   const { data, error } = await supabase.auth.getUser();
+  // Supabase returns AuthSessionMissingError before the first login. That is
+  // the ordinary state for the public login page, not an application error.
+  if (error?.message === "Auth session missing!") return null;
   fail(error);
   return data.user;
 }
