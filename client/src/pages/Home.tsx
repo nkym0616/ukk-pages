@@ -30,9 +30,8 @@ import {
   ChevronRight,
   LayoutGrid,
 } from "lucide-react";
-import { useAuth } from "@/\u005fcore/hooks/useAuth";
-import { startLegacyLogin, startLogin } from "@/const";
-import { apiUrl, isPages } from "@/lib/pagesSession";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { canManageContest, canUpdateTaskStatus } from "@shared/permissions";
@@ -115,19 +114,12 @@ function Gate({
 }) {
   const [showSetup, setShowSetup] = useState(false);
   const [code, setCode] = useState("");
-  const providers = trpc.auth.providers.useQuery(undefined, {
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-  });
-  const googleError = new URLSearchParams(window.location.search).get(
-    "google_error"
-  );
   const claim = trpc.ukk.claimOwner.useMutation({
     onSuccess: () => {
       toast.success("部長の初期設定が完了しました");
       onRefresh();
     },
-    onError: e => toast.error(e.message),
+    onError: (e) => toast.error(e.message),
   });
   return (
     <div className="gate">
@@ -141,69 +133,21 @@ function Gate({
           <br />
           <span>ひとつの場所に。</span>
         </h1>
-        <p>
-        
-        </p>
+        <p></p>
         <div className="gate-actions">
           {!profile ? (
             <>
-              <a
+              <button
+                type="button"
                 className="btn primary large"
-                href={apiUrl("/api/auth/google/start")}
-                onClick={e => {
-                  if (isPages) {
-                    e.preventDefault();
-                    Promise.resolve(startLogin()).catch(err =>
-                      toast.error(err.message)
-                    );
-                  }
-                }}
-                target={window.self !== window.top ? "_blank" : "_self"}
-                rel="noopener noreferrer"
+                onClick={() =>
+                  void startLogin().catch((err) => toast.error(err.message))
+                }
               >
                 Googleでログイン
                 <ArrowRight size={18} />
-              </a>
-              <small>
-                 初回ログイン後は部長の承認が必要です
-              </small>
-              {providers.data?.google === false && (
-                <div className="login-config-notice">
-                  <p>
-                    このサーバーではGoogle設定がまだ反映されていません。設定後に再公開が必要です。
-                  </p>
-                  <button
-                    className="text-btn"
-                    onClick={() => providers.refetch()}
-                  >
-                    設定を再確認
-                  </button>
-                </div>
-              )}
-              {providers.isError && (
-                <div className="login-config-notice">
-                  <p>
-                    設定状態の取得に失敗しました。Googleログインは上のボタンから直接開始できます。
-                  </p>
-                  <button
-                    className="text-btn"
-                    onClick={() => providers.refetch()}
-                  >
-                    もう一度確認
-                  </button>
-                </div>
-              )}
-              <details className="legacy-login">
-                <summary>既存の部員アカウントを引き継ぐ</summary>
-                <p>
-                  これまで使っていたアカウントでログインし、プロフィールからGoogleを連携してください。
-                </p>
-                <button className="text-btn" onClick={() => startLegacyLogin()}>
-                  {isPages
-                    ? "既存サーバーでアカウントを引き継ぐ"
-                    : "以前のログインを使う"}
-                </button>
-              </details>
+              </button>
+              <small>初回ログイン後は部長の承認が必要です</small>
             </>
           ) : (
             <div className="gate-notice">
@@ -237,7 +181,7 @@ function Gate({
                   {showSetup && (
                     <form
                       className="setup-form"
-                      onSubmit={e => {
+                      onSubmit={(e) => {
                         e.preventDefault();
                         claim.mutate({ code });
                       }}
@@ -248,7 +192,7 @@ function Gate({
                           type="password"
                           autoComplete="off"
                           value={code}
-                          onChange={e => setCode(e.target.value)}
+                          onChange={(e) => setCode(e.target.value)}
                           required
                           maxLength={100}
                           placeholder="初期設定コード"
@@ -268,13 +212,6 @@ function Gate({
                 </div>
               )}
             </div>
-          )}
-          {googleError && (
-            <p className="error-text">
-              {googleError === "not_configured"
-                ? "Googleログインの設定が未完了です。"
-                : "Googleログインに失敗しました。もう一度ログインするか、設定・連携先を確認してください。"}
-            </p>
           )}
           {error && <p className="error-text">{error}</p>}
         </div>
@@ -386,7 +323,7 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
   } | null>(null);
   const [memberModal, setMemberModal] = useState<UMember | null>(null);
   const [participantModal, setParticipantModal] = useState<UContest | null>(
-    null
+    null,
   );
   const [detail, setDetail] = useState<UTask | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -394,53 +331,45 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
   const utils = trpc.useUtils();
   const profile = data.profile;
   const admin = profile.role === "admin";
-  const providers = trpc.auth.providers.useQuery();
   const statusMutation = trpc.ukk.updateStatus.useMutation({
     onSuccess: () => {
       utils.ukk.overview.invalidate();
       toast.success("進捗を更新しました");
     },
-    onError: e => {
+    onError: (e) => {
       utils.ukk.invalidate();
       toast.error(e.message);
     },
   });
-  const sync = trpc.ukk.syncMembers.useMutation({
-    onSuccess: () => {
-      utils.ukk.overview.invalidate();
-      toast.success("ログイン済みメンバーを同期しました");
-    },
-    onError: e => toast.error(e.message),
-  });
-  const mine = data.tasks.filter(t => t.assigneeId === data.viewerId);
-  const unfinished = data.tasks.filter(t => t.status !== "done");
-  const done = data.tasks.filter(t => t.status === "done").length;
+  const mine = data.tasks.filter((t) => t.assigneeId === data.viewerId);
+  const unfinished = data.tasks.filter((t) => t.status !== "done");
+  const done = data.tasks.filter((t) => t.status === "done").length;
   const progress = data.tasks.length
     ? Math.round((done / data.tasks.length) * 100)
     : 0;
-  const manageable = data.contests.filter(c =>
-    canManageContest(profile, c.id, data.participants)
+  const manageable = data.contests.filter((c) =>
+    canManageContest(profile, c.id, data.participants),
   );
   const filtered = useMemo(
     () =>
       data.tasks
         .filter(
-          t =>
+          (t) =>
             (page !== "my" || t.assigneeId === data.viewerId) &&
             (filterContest === "all" ||
               t.contestId === Number(filterContest)) &&
             (filterStatus === "all" || t.status === filterStatus) &&
             (!query ||
-              `${t.title} ${t.description} ${data.contests.find(c => c.id === t.contestId)?.name} ${data.members.find(m => m.userId === t.assigneeId)?.displayName}`
+              `${t.title} ${t.description} ${data.contests.find((c) => c.id === t.contestId)?.name} ${data.members.find((m) => m.userId === t.assigneeId)?.displayName}`
                 .toLowerCase()
-                .includes(query.toLowerCase()))
+                .includes(query.toLowerCase())),
         )
         .sort(
           (a, b) =>
             (a.status === "done" ? 1 : 0) - (b.status === "done" ? 1 : 0) ||
-            (a.dueDate || "9999").localeCompare(b.dueDate || "9999")
+            (a.dueDate || "9999").localeCompare(b.dueDate || "9999"),
         ),
-    [data, page, filterContest, filterStatus, query]
+    [data, page, filterContest, filterStatus, query],
   );
   const titles: Record<Page, string> = {
     overview: "ダッシュボード",
@@ -462,15 +391,15 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
       toast.info(
         admin
           ? "先にコンテストを作成してください"
-          : "タスクを追加できるコンテストがありません"
+          : "タスクを追加できるコンテストがありません",
       );
       return;
     }
     setTaskModal({ contestId });
   }
   function taskRow(t: UTask, compact = false) {
-    const c = data.contests.find(c => c.id === t.contestId);
-    const person = data.members.find(m => m.userId === t.assigneeId);
+    const c = data.contests.find((c) => c.id === t.contestId);
+    const person = data.members.find((m) => m.userId === t.assigneeId);
     const allowed = canUpdateTaskStatus(profile, t, data.participants);
     return (
       <div className={`task-row ${compact ? "compact" : ""}`} key={t.id}>
@@ -516,7 +445,7 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
               aria-label={`${t.title}の進捗`}
               value={t.status}
               disabled={statusMutation.isPending}
-              onChange={e =>
+              onChange={(e) =>
                 statusMutation.mutate({
                   id: t.id,
                   status: e.target.value as UTask["status"],
@@ -544,12 +473,12 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
     );
   }
   function contestCard(c: UContest) {
-    const tasks = data.tasks.filter(t => t.contestId === c.id);
-    const completed = tasks.filter(t => t.status === "done").length;
+    const tasks = data.tasks.filter((t) => t.contestId === c.id);
+    const completed = tasks.filter((t) => t.status === "done").length;
     const percent = tasks.length
       ? Math.round((completed / tasks.length) * 100)
       : 0;
-    const people = data.participants.filter(p => p.contestId === c.id);
+    const people = data.participants.filter((p) => p.contestId === c.id);
     return (
       <article className="contest-card" key={c.id}>
         <div className="contest-top">
@@ -607,10 +536,10 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
             aria-label={admin ? "参加メンバーを設定" : "参加メンバーを見る"}
             title={admin ? "参加メンバー・担当設定" : "参加メンバーを見る"}
           >
-            {people.slice(0, 3).map(p => (
+            {people.slice(0, 3).map((p) => (
               <span className="avatar tiny" key={p.userId}>
                 {data.members
-                  .find(m => m.userId === p.userId)
+                  .find((m) => m.userId === p.userId)
                   ?.displayName.slice(0, 1)}
               </span>
             ))}
@@ -667,7 +596,7 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
         </div>
         <div className="nav-label">WORKSPACE</div>
         <nav>
-          {nav.map(n => (
+          {nav.map((n) => (
             <button
               key={n.id}
               className={`nav-item ${page === n.id ? "active" : ""}`}
@@ -676,8 +605,8 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
               <n.icon size={19} />
               <span>{n.label}</span>
               {n.id === "my" &&
-                mine.filter(t => t.status !== "done").length > 0 && (
-                  <b>{mine.filter(t => t.status !== "done").length}</b>
+                mine.filter((t) => t.status !== "done").length > 0 && (
+                  <b>{mine.filter((t) => t.status !== "done").length}</b>
                 )}
             </button>
           ))}
@@ -692,9 +621,10 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
               >
                 <Users size={19} />
                 <span>メンバー</span>
-                {data.members.filter(m => m.state === "pending").length > 0 && (
+                {data.members.filter((m) => m.state === "pending").length >
+                  0 && (
                   <b>
-                    {data.members.filter(m => m.state === "pending").length}
+                    {data.members.filter((m) => m.state === "pending").length}
                   </b>
                 )}
               </button>
@@ -722,9 +652,9 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
             )}
           </div>
           {data.contests
-            .filter(c => c.status === "active")
+            .filter((c) => c.status === "active")
             .slice(0, 5)
-            .map(c => (
+            .map((c) => (
               <button
                 key={c.id}
                 className="sidebar-contest"
@@ -876,14 +806,14 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
                   },
                   {
                     label: "自分の担当タスク",
-                    value: mine.filter(t => t.status !== "done").length,
+                    value: mine.filter((t) => t.status !== "done").length,
                     sub: "次の一歩をチェック",
                     icon: CircleCheck,
                     tone: "blue",
                   },
                   {
                     label: "活動中のコンテスト",
-                    value: data.contests.filter(c => c.status === "active")
+                    value: data.contests.filter((c) => c.status === "active")
                       .length,
                     sub: "チームで進める挑戦",
                     icon: Trophy,
@@ -896,7 +826,7 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
                     icon: Clock3,
                     tone: "purple",
                   },
-                ].map(stat => (
+                ].map((stat) => (
                   <div className="stat" key={stat.label}>
                     <div>
                       <span className="stat-label">{stat.label}</span>
@@ -948,7 +878,7 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
                       <h2>
                         次に取り組むタスク
                         <span>
-                          {mine.filter(t => t.status !== "done").length}
+                          {mine.filter((t) => t.status !== "done").length}
                         </span>
                       </h2>
                       <p>あなたの担当タスクを、締切が近い順に。</p>
@@ -961,14 +891,16 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
                       <ArrowRight size={15} />
                     </button>
                   </div>
-                  {mine.filter(t => t.status !== "done").length ? (
+                  {mine.filter((t) => t.status !== "done").length ? (
                     mine
-                      .filter(t => t.status !== "done")
+                      .filter((t) => t.status !== "done")
                       .sort((a, b) =>
-                        (a.dueDate || "9999").localeCompare(b.dueDate || "9999")
+                        (a.dueDate || "9999").localeCompare(
+                          b.dueDate || "9999",
+                        ),
                       )
                       .slice(0, 5)
-                      .map(t => taskRow(t, true))
+                      .map((t) => taskRow(t, true))
                   ) : (
                     <Empty
                       title="今のところ、担当タスクはありません"
@@ -1003,7 +935,7 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
                       <span key={s}>
                         <i className={`dot status-${s}`} />
                         {l}
-                        <b>{data.tasks.filter(t => t.status === s).length}</b>
+                        <b>{data.tasks.filter((t) => t.status === s).length}</b>
                       </span>
                     ))}
                   </div>
@@ -1047,17 +979,17 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
                     placeholder="タスクを検索…"
                     aria-label="タスクを検索"
                     value={query}
-                    onChange={e => setQuery(e.target.value)}
+                    onChange={(e) => setQuery(e.target.value)}
                   />
                 </div>
                 <div className="filter-controls">
                   <select
                     aria-label="コンテストで絞り込み"
                     value={filterContest}
-                    onChange={e => setFilterContest(e.target.value)}
+                    onChange={(e) => setFilterContest(e.target.value)}
                   >
                     <option value="all">すべてのコンテスト</option>
-                    {data.contests.map(c => (
+                    {data.contests.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
                       </option>
@@ -1066,7 +998,7 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
                   <select
                     aria-label="進捗で絞り込み"
                     value={filterStatus}
-                    onChange={e => setFilterStatus(e.target.value)}
+                    onChange={(e) => setFilterStatus(e.target.value)}
                   >
                     <option value="all">すべての進捗</option>
                     {Object.entries(statusLabels).map(([s, l]) => (
@@ -1121,7 +1053,9 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
                   }
                 />
               ) : view === "list" ? (
-                <div className="task-list">{filtered.map(t => taskRow(t))}</div>
+                <div className="task-list">
+                  {filtered.map((t) => taskRow(t))}
+                </div>
               ) : (
                 <div className="kanban">
                   {Object.entries(statusLabels).map(([s, l]) => (
@@ -1130,22 +1064,22 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
                         <i className={`dot status-${s}`} />
                         {l}
                         <span>
-                          {filtered.filter(t => t.status === s).length}
+                          {filtered.filter((t) => t.status === s).length}
                         </span>
                       </h3>
                       {filtered
-                        .filter(t => t.status === s)
-                        .map(t => (
+                        .filter((t) => t.status === s)
+                        .map((t) => (
                           <button
                             key={t.id}
                             className="kanban-card"
                             onClick={() => setDetail(t)}
                           >
                             <span
-                              className={`kanban-contest ${data.contests.find(c => c.id === t.contestId)?.color}`}
+                              className={`kanban-contest ${data.contests.find((c) => c.id === t.contestId)?.color}`}
                             >
                               {
-                                data.contests.find(c => c.id === t.contestId)
+                                data.contests.find((c) => c.id === t.contestId)
                                   ?.name
                               }
                             </span>
@@ -1158,7 +1092,7 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
                               </span>
                               <span className="avatar tiny">
                                 {data.members
-                                  .find(m => m.userId === t.assigneeId)
+                                  .find((m) => m.userId === t.assigneeId)
                                   ?.displayName.slice(0, 1) || "–"}
                               </span>
                             </footer>
@@ -1205,13 +1139,6 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
                 <span>
                   部員が初回ログインすると「承認待ち」に表示されます。「権限設定」から有効にし、コンテストに追加してください。
                 </span>
-                <button
-                  className="text-btn"
-                  disabled={sync.isPending}
-                  onClick={() => sync.mutate()}
-                >
-                  一覧を同期
-                </button>
               </div>
               <section className="panel">
                 <div className="section-heading">
@@ -1220,11 +1147,12 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
                   </h2>
                   <span className="muted">
                     承認待ち{" "}
-                    {data.members.filter(m => m.state === "pending").length} 人
+                    {data.members.filter((m) => m.state === "pending").length}{" "}
+                    人
                   </span>
                 </div>
                 <div className="member-table">
-                  {data.members.map(m => (
+                  {data.members.map((m) => (
                     <div className="member-row" key={m.userId}>
                       <span className="avatar">
                         {m.displayName.slice(0, 1)}
@@ -1304,7 +1232,7 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
                       "自分の担当のみ",
                     ],
                     ["登録承認・操作権限の変更", "可能", "不可", "不可"],
-                  ].map(row => (
+                  ].map((row) => (
                     <div className="permission-row" key={row[0]}>
                       {row.map((v, i) => (
                         <span key={i} className={v === "不可" ? "muted" : ""}>
@@ -1369,34 +1297,20 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
               </span>
             </div>
             <div className="google-link-section">
-              <h3 className="profile-section-title">Googleアカウント連携</h3>
+              <h3 className="profile-section-title">ログイン方法</h3>
               <p>
-                現在の役職・参加コンテスト・担当タスクを引き継いで、Googleでログインできるようにします。
+                GoogleログインはSupabase
+                Authで管理されています。役職・参加コンテスト・担当タスクは、このUKKワークスペースに保存されます。
               </p>
-              <a
-                className="btn secondary"
-                href={apiUrl(isPages ? "/" : "/api/auth/google/start?link=1")}
-                target={window.self !== window.top ? "_blank" : "_self"}
-                rel="noopener noreferrer"
-              >
-                {isPages
-                  ? "既存サーバーでGoogleアカウントを連携"
-                  : "Googleアカウントを連携"}
-              </a>
-              {providers.data?.google === false && (
-                <p>
-                  このサーバーではGoogle設定が未反映です。設定後に再公開してください。
-                </p>
-              )}
             </div>
             <div>
               <h3 className="profile-section-title">参加コンテスト・担当</h3>
               {data.participants
-                .filter(p => p.userId === data.viewerId)
-                .map(p => (
+                .filter((p) => p.userId === data.viewerId)
+                .map((p) => (
                   <div className="profile-contest-row" key={p.contestId}>
                     <strong>
-                      {data.contests.find(c => c.id === p.contestId)?.name}
+                      {data.contests.find((c) => c.id === p.contestId)?.name}
                     </strong>
                     <span>
                       {p.duty || "担当未設定"}
@@ -1404,7 +1318,7 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
                     </span>
                   </div>
                 ))}
-              {!data.participants.some(p => p.userId === data.viewerId) && (
+              {!data.participants.some((p) => p.userId === data.viewerId) && (
                 <p className="muted">参加コンテストはまだありません。</p>
               )}
             </div>
@@ -1450,18 +1364,18 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
         >
           <div className="participants-list">
             {data.participants
-              .filter(p => p.contestId === participantView.id)
-              .map(p => (
+              .filter((p) => p.contestId === participantView.id)
+              .map((p) => (
                 <div className="participant-row" key={p.userId}>
                   <span className="avatar small">
                     {data.members
-                      .find(m => m.userId === p.userId)
+                      .find((m) => m.userId === p.userId)
                       ?.displayName.slice(0, 1) || "–"}
                   </span>
                   <div className="grow">
                     <strong>
                       {
-                        data.members.find(m => m.userId === p.userId)
+                        data.members.find((m) => m.userId === p.userId)
                           ?.displayName
                       }
                     </strong>
@@ -1473,7 +1387,7 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
                 </div>
               ))}
             {!data.participants.some(
-              p => p.contestId === participantView.id
+              (p) => p.contestId === participantView.id,
             ) && <p className="muted">参加メンバーはまだいません。</p>}
           </div>
         </Modal>
@@ -1495,7 +1409,7 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
       {memberModal && admin && (
         <MemberForm
           member={
-            data.members.find(m => m.userId === memberModal.userId) ||
+            data.members.find((m) => m.userId === memberModal.userId) ||
             memberModal
           }
           onClose={() => setMemberModal(null)}
@@ -1509,11 +1423,11 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
         />
       )}
       {detail &&
-        data.tasks.some(t => t.id === detail.id) &&
+        data.tasks.some((t) => t.id === detail.id) &&
         (() => {
-          const t = data.tasks.find(t => t.id === detail.id)!;
-          const c = data.contests.find(c => c.id === t.contestId);
-          const person = data.members.find(m => m.userId === t.assigneeId);
+          const t = data.tasks.find((t) => t.id === detail.id)!;
+          const c = data.contests.find((c) => c.id === t.contestId);
+          const person = data.members.find((m) => m.userId === t.assigneeId);
           return (
             <Modal
               title={t.title}
@@ -1550,7 +1464,7 @@ function Workspace({ data, logout }: { data: Overview; logout: () => void }) {
                     <select
                       value={t.status}
                       disabled={statusMutation.isPending}
-                      onChange={e =>
+                      onChange={(e) =>
                         statusMutation.mutate({
                           id: t.id,
                           status: e.target.value as UTask["status"],
