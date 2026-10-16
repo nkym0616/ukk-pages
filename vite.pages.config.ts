@@ -4,8 +4,8 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
 
 export default defineConfig({
-  // Cloudflare Pages serves this project from its domain root.
-  base: "/",
+  // GitHub Pages serves this project below the repository name.
+  base: "/ukk-pages/",
   root: path.resolve(import.meta.dirname, "client"),
   publicDir: path.resolve(import.meta.dirname, "client/public"),
   envDir: path.resolve(import.meta.dirname),

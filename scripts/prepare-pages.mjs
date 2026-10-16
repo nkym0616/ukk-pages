@@ -27,7 +27,10 @@ for (const file of files) {
   );
 }
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
-assert(html.includes("/assets/"), "Static asset paths not ready");
+assert(
+  html.includes("/ukk-pages/assets/"),
+  "GitHub Pages asset paths not ready",
+);
 fs.writeFileSync(path.join(root, "404.html"), html);
 console.log(
   `Pages artifacts verified: ${files.length} files, no protected values, no source maps or server settings.`,
