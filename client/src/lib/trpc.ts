@@ -53,20 +53,24 @@ async function profileQuery(): Promise<Profile> {
 
 async function overviewQuery(): Promise<Overview> {
   const profile = await profileQuery();
-  const [contestsResult, participantsResult, tasksResult, membersResult] =
+  const [contestsResult, participantsResult, tasksResult, memberRows] =
     await Promise.all([
       supabase.from("contests").select("*").order("created_at"),
       supabase.from("contest_members").select("*"),
       supabase.from("tasks").select("*").order("created_at"),
-      supabase
-        .from("profiles")
-        .select("id, email, display_name, role, state")
-        .order("display_name"),
+      callRpc<
+        Array<{
+          user_id: number | string;
+          display_name: string;
+          role: ClubRole;
+          state: MemberState;
+          email: string | null;
+        }>
+      >("list_visible_profiles"),
     ]);
   fail(contestsResult.error);
   fail(participantsResult.error);
   fail(tasksResult.error);
-  fail(membersResult.error);
 
   const contests: UContest[] = (contestsResult.data ?? []).map((row) => ({
     id: number(row.id),
@@ -98,12 +102,12 @@ async function overviewQuery(): Promise<Overview> {
     createdBy: row.created_by === null ? null : number(row.created_by),
     createdAt: row.created_at,
   }));
-  const members: UMember[] = (membersResult.data ?? []).map((row) => ({
-    userId: number(row.id),
+  const members: UMember[] = (memberRows ?? []).map((row) => ({
+    userId: number(row.user_id),
     displayName: row.display_name,
     role: row.role as ClubRole,
     state: row.state as MemberState,
-    email: profile.role === "admin" ? row.email : null,
+    email: row.email,
   }));
   return {
     viewerId: profile.userId,
