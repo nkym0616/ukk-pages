@@ -1,10 +1,31 @@
-# UKK — GitHub Pages + Supabase
+# UKK — Cloudflare Pages + Supabase
 
-公開URL: **https://nkym0616.github.io/ukk-pages/**
+このリポジトリは、UKKの公開画面と、その**編集用の元コード**をまとめたものです。リポジトリは非公開のまま維持し、Cloudflare Pagesが `main` ブランチの更新を自動でビルドして公開します。
 
-このリポジトリは、UKKの公開画面と、その**編集用の元コード**をまとめたものです。GitHub上で画面の元コードを編集して `main` ブランチへ保存すると、GitHub Actionsが自動で画面を作り直し、GitHub Pagesへ反映します。通常は数分で更新されます。
+画面はCloudflare Pages、Googleログイン・役職・コンテスト・タスクはSupabase AuthとPostgresで運用します。ブラウザに配布するSupabaseの公開可能キーはRLSで保護され、Googleのクライアントシークレットやサービスロールキーはこのリポジトリに保存しません。
 
-画面はGitHub Pages、Googleログイン・役職・コンテスト・タスクはSupabase AuthとPostgresで運用します。Supabaseへの移行手順とRLS付きのSQLは [`supabase/`](supabase/) にあります。
+## Cloudflare Pages の設定
+
+Cloudflare Dashboardで **Workers & Pages** → **Create application** → **Pages** → **Connect to Git** を選び、`nkym0616/ukk-pages` を接続します。GitHub Appのアクセス範囲は、`ukk-pages` だけに限定します。
+
+| 設定項目               | 値                                                   |
+| ---------------------- | ---------------------------------------------------- |
+| Production branch      | `main`                                               |
+| Framework preset       | `None`                                               |
+| Build command          | `pnpm install --frozen-lockfile && pnpm build:pages` |
+| Build output directory | `dist-pages`                                         |
+| Root directory         | 空欄                                                 |
+
+Cloudflare Pagesは、`main` にマージされた変更を本番公開します。別ブランチの変更はプレビューとして確認できます。
+
+## Supabase Auth の公開URL設定
+
+Cloudflare Pagesの初回デプロイ後に表示される実際の `https://<project>.pages.dev/` を、Supabase Dashboardの **Authentication** → **URL Configuration** で次の両方へ登録します。
+
+- **Site URL**
+- **Redirect URLs**
+
+UKKでは、開いているサイトのURLへGoogleログイン後に戻るため、この登録が必須です。Google Cloud側のOAuthコールバックURIは、既存のSupabase callback URLのままにします。
 
 ## どこを編集するか
 
@@ -15,10 +36,13 @@
 | タスク・コンテスト・メンバーの入力画面 | [`client/src/components/UkkForms.tsx`](client/src/components/UkkForms.tsx) |
 | タブ名、説明文、アイコン               | [`client/index.html`](client/index.html)                                   |
 
-ファイルを開いて右上の鉛筆アイコンから編集し、**Commit changes** を押してください。Actionsタブの **Build and publish UKK Pages** が完了すると反映されます。
+ファイルを開いて右上の鉛筆アイコンから編集し、**Commit changes** を押してください。Cloudflare Pagesが自動で本番版を更新します。
 
-## 触らないファイル
+## ローカルでの確認
 
-ルート直下の `index.html`、`404.html`、`assets/`、`manus-routes.json`、`ukk-logo.svg` は公開用に自動生成されます。直接変更しても、次の元コード更新で上書きされます。編集は必ず `client/` 内の元コードで行ってください。
+```bash
+pnpm install --frozen-lockfile
+pnpm build:pages
+```
 
-Googleクライアントシークレット、サービスロールキー、データベース接続情報、部員データはこのリポジトリに入れません。ブラウザにはRLSで制限されたSupabaseの公開可能キーだけを配布します。
+成果物は `dist-pages/` に生成されます。
