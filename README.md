@@ -1,31 +1,25 @@
-# UKK — Cloudflare Pages + Supabase
+# UKK — GitHub Pages + Supabase
 
-このリポジトリは、UKKの公開画面と、その**編集用の元コード**をまとめたものです。リポジトリは非公開のまま維持し、Cloudflare Pagesが `main` ブランチの更新を自動でビルドして公開します。
+このリポジトリには、UKKの画面を作る**元コード**を保存しています。GitHub Pagesで公開するため、リポジトリは公開です。`main` ブランチに変更を保存すると、GitHub Actionsが画面を自動でビルドし、GitHub Pagesへ反映します。
 
-画面はCloudflare Pages、Googleログイン・役職・コンテスト・タスクはSupabase AuthとPostgresで運用します。ブラウザに配布するSupabaseの公開可能キーはRLSで保護され、Googleのクライアントシークレットやサービスロールキーはこのリポジトリに保存しません。
+公開URLは **https://nkym0616.github.io/ukk-pages/** です。
 
-> 部員の登録情報やタスクの実データはGitHubへ保存されません。Supabaseに保存され、メールアドレスはアドミンだけが取得できるようにしています。
+> 部員の登録情報・メールアドレス・タスク・Googleログイン情報はGitHubに保存されません。データはSupabaseに保存され、メールアドレスを取得できるのはアドミンだけです。
 
-## Cloudflare Pages の設定
+画面はGitHub Pages、Googleログイン・役職・コンテスト・タスクはSupabase AuthとPostgresで運用します。ブラウザに配布するSupabaseの公開可能キーはRLSで保護されます。Googleのクライアントシークレット、Supabaseサービスロールキー、部員データはこのリポジトリに保存しません。
 
-Cloudflare Dashboardで **Workers & Pages** → **Create application** → **Pages** → **Connect to Git** を選び、`nkym0616/ukk-pages` を接続します。GitHub Appのアクセス範囲は、`ukk-pages` だけに限定します。
+## GitHub Pages の設定
 
-| 設定項目               | 値                                                   |
-| ---------------------- | ---------------------------------------------------- |
-| Production branch      | `main`                                               |
-| Framework preset       | `None`                                               |
-| Build command          | `pnpm install --frozen-lockfile && pnpm build:pages` |
-| Build output directory | `dist-pages`                                         |
-| Root directory         | 空欄                                                 |
-
-Cloudflare Pagesは、`main` にマージされた変更を本番公開します。別ブランチの変更はプレビューとして確認できます。
+GitHubの [Pages設定](https://github.com/nkym0616/ukk-pages/settings/pages) で **Build and deployment** の **Source** を **GitHub Actions** に設定してください。`main` へのpushで **Build and deploy UKK Pages** が実行されます。
 
 ## Supabase Auth の公開URL設定
 
-Cloudflare Pagesの初回デプロイ後に表示される実際の `https://<project>.pages.dev/` を、Supabase Dashboardの **Authentication** → **URL Configuration** で次の両方へ登録します。
+Supabase Dashboardの **Authentication** → **URL Configuration** で、次の両方に公開URLを登録します。
 
-- **Site URL**
-- **Redirect URLs**
+```text
+Site URL:      https://nkym0616.github.io/ukk-pages/
+Redirect URLs: https://nkym0616.github.io/ukk-pages/
+```
 
 UKKでは、開いているサイトのURLへGoogleログイン後に戻るため、この登録が必須です。Google Cloud側のOAuthコールバックURIは、既存のSupabase callback URLのままにします。
 
@@ -38,7 +32,7 @@ UKKでは、開いているサイトのURLへGoogleログイン後に戻るた�
 | タスク・コンテスト・メンバーの入力画面 | [`client/src/components/UkkForms.tsx`](client/src/components/UkkForms.tsx) |
 | タブ名、説明文、アイコン               | [`client/index.html`](client/index.html)                                   |
 
-ファイルを開いて右上の鉛筆アイコンから編集し、**Commit changes** を押してください。Cloudflare Pagesが自動で本番版を更新します。
+ファイルを開いて右上の鉛筆アイコンから編集し、**Commit changes** を押してください。GitHub Actionsが成功すると数分で公開版に反映されます。
 
 ## ローカルでの確認
 
