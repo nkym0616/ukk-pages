@@ -4,6 +4,8 @@
 
 画面はCloudflare Pages、Googleログイン・役職・コンテスト・タスクはSupabase AuthとPostgresで運用します。ブラウザに配布するSupabaseの公開可能キーはRLSで保護され、Googleのクライアントシークレットやサービスロールキーはこのリポジトリに保存しません。
 
+> 部員の登録情報やタスクの実データはGitHubへ保存されません。Supabaseに保存され、メールアドレスはアドミンだけが取得できるようにしています。
+
 ## Cloudflare Pages の設定
 
 Cloudflare Dashboardで **Workers & Pages** → **Create application** → **Pages** → **Connect to Git** を選び、`nkym0616/ukk-pages` を接続します。GitHub Appのアクセス範囲は、`ukk-pages` だけに限定します。
